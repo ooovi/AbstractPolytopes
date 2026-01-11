@@ -87,7 +87,8 @@ lemma flagOn_encardtoNat_eq_of_pureFlag (h : pureFlag P) (f g : FlagOn (Iic a)) 
 lemma rankex {a : P} (h : pureFlag P) : ∃ n, ∀ f : FlagOn (Iic a), f.carrier.encard = n :=
   (n_exists _ _).mp (flagOn_encard_eq_of_pureFlag h)
 
-/-- Extend a given flag on `Iic a` to a flag on `Iic b` that contains it. -/
+
+/-- Extend a given flag on `Iic a` to a flag on `Iic b` thatn contains it. -/
 def extendFlag {a b : P} (hab : a ≤ b) (f : FlagOn (Iic a)) :
       FlagOn (Iic b) where
     carrier := f.carrier ∪ (default : FlagOn (Icc a b)).carrier
@@ -181,9 +182,8 @@ noncomputable instance inducedGrading {P : Type*}  [PartialOrder P] [BoundedOrde
 }
 
 
-
-def SectionChainConnected (P : Type*) [Preorder P] : Prop := sorry
-
+def SectionChainConnected (P : Type*) [Preorder P] :=
+  ∀ {a b : P}, a ≤ b → ∃ s : Set P, IsChain (· ⋖ ·) s ∧ s ⊆ Icc a b ∧ a ∈ s ∧ b ∈ s
 
 /- An abstract polytope a partial order that is bounded, graded, section-connected, and satisfies
 the diamond property, that is, if the grades of two elements a < b differ by 2, then there are
