@@ -91,6 +91,7 @@ noncomputable def expandIcc (α : Type*) [Preorder α] (a : α) (f : FlagOn (Iic
     · exact ff
     · exact le_trans ff (z.Chain' c this |> fun h => by simp [d] at h; exact h hne)
 
+
 section Preorder
 
 variable {P : Type*} [Preorder P]
@@ -120,6 +121,44 @@ lemma Icc_bounds_mem {a b : P} (hab : a ≤ b) (f : FlagOn (Icc a b)) :
     (f.Chain'.insert fun c hc hn => .inr <| (mem_Icc.1 <| f.carrier_sub hc).2)
     (subset_insert _ _)]
     exact mem_insert _ _
+
+/-- Extend a given flag on `Iic a` to a flag on `Iic b` thatn contains it. -/
+def extendFlag {a b : P} (hab : a ≤ b) (f : FlagOn (Iic a)) :
+      FlagOn (Iic b) where
+    carrier := f.carrier ∪ (default : FlagOn (Icc a b)).carrier
+    carrier_sub := by
+      rintro x (hf | hg)
+      · exact le_trans (f.carrier_sub hf) hab
+      · exact ((default : FlagOn (Icc a b)).carrier_sub hg).2
+    Chain' := by
+      set f' : FlagOn (Icc a b) := default
+      rintro x (hxf | hxg) y (hyf | hyg) hne
+      · exact f.Chain' hxf hyf hne
+      · left; exact le_trans (f.carrier_sub hxf) (f'.carrier_sub hyg).1
+      · right; exact le_trans (f.carrier_sub hyf) (f'.carrier_sub hxg).1
+      · exact f'.Chain' hxg hyg hne
+    max_chain' := by
+      intro s hs hchain hcarrier_sub
+      ext z; refine ⟨fun hz => hcarrier_sub hz, fun hz => ?_⟩
+      by_cases hne : z = a
+      · rw [hne]; exact Or.inl (Iic_bound_mem _)
+      · rcases hchain hz (hcarrier_sub (Or.inr (Icc_bounds_mem hab _).1)) hne with hza | haz
+        · left
+          exact (f.max_chain' (Set.inter_subset_right)
+            (fun _ hx _ hy => hchain hx.1 hy.1)
+            (fun _ hw => ⟨hcarrier_sub (Or.inl hw), f.carrier_sub hw⟩)).symm ▸ ⟨hz, hza⟩
+        · right
+          set f' : FlagOn (Icc a b) := default
+          exact (f'.max_chain' (Set.inter_subset_right)
+            (fun _ hx _ hy => hchain hx.1 hy.1)
+            (fun _ hw => ⟨hcarrier_sub (Or.inr hw), f'.carrier_sub hw⟩)).symm ▸
+            ⟨hz, haz, hs hz⟩
+
+-- extendFlag in fact extends the flag
+lemma extendFlag_carrier_lt {a b : P} (hab : a < b) (f : FlagOn (Iic a)) :
+  f.carrier ⊂ (extendFlag hab.le f).carrier := by
+  simp only [extendFlag, ssubset_union_left_iff]
+  exact fun c => hab.not_ge <| f.carrier_sub <| c (Icc_bounds_mem hab.le _).2
 
 end Preorder
 
