@@ -17,10 +17,6 @@ lemma n_exists (α : Type*) [Nonempty α] (r : α → T) :
     obtain ⟨n, hn⟩ := h
     rw [hn f, hn g]
 
-def IsChain.restrict {α : Type*} {s t : Set α} {r : α → α → Prop} (hchain : IsChain r s) :
-    IsChain (fun (x y : t) => r x.val y.val) ((↑) ⁻¹' s : Set t) :=
-  fun _ hx _ hy hxy => hchain hx hy (Subtype.val_injective.ne hxy)
-
 lemma Nat.exists_between_of_lt_of_succ_ne {a b : ℕ} (hab : a < b) (hne : a + 1 ≠ b) :
     ∃ c, a < c ∧ c < b := by
   use a + 1

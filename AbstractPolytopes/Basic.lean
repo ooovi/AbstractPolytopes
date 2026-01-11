@@ -137,11 +137,14 @@ lemma flagOn_card_mono {a b : P} (h : pureFlag P) (alb : a < b)
     exact Set.Finite.encard_lt_encard (finiteOn_of_pureFlag h f) <| extendFlag_carrier_lt alb f
   rwa [flagOn_encard_eq_of_pureFlag h f' g] at this
 
+-- TODO would be nice to have that sections are pure if the whole thing is
+theorem sectionPure (h : pureFlag P) : pureFlag ↑(Icc a b) := sorry
+
 end pureFlag
 
 
 -- main result: there is a rank implied by pureFlag and SectionChainConnected
-noncomputable instance inducedGrading {P : Type*}  [PartialOrder P] [BoundedOrder P]
+noncomputable instance inducedGrading {P : Type*} [PartialOrder P] [BoundedOrder P]
     (h : pureFlag P) :
     GradeOrder ℤ P := {
   grade a := ((someFlagOn a).carrier.encard.toNat : ℤ) - 1
@@ -181,20 +184,28 @@ noncomputable instance inducedGrading {P : Type*}  [PartialOrder P] [BoundedOrde
       simp [this, Int.le_of_sub_one_lt hm]
 }
 
+def IsProper [LE α] [BoundedOrder α] (s : α) : Prop := ⊤ ≠ s ∧ ⊥ ≠ s
 
-def SectionChainConnected (P : Type*) [Preorder P] :=
-  ∀ {a b : P}, a ≤ b → ∃ s : Set P, IsChain (· ⋖ ·) s ∧ s ⊆ Icc a b ∧ a ∈ s ∧ b ∈ s
+-- A bounded pure poset P of rank n is called connected if either n ≤ 1, or n ≥ 2 and for
+-- any two proper faces F and G of P there exists a finite sequence of proper faces
+-- F = H0, H1, . . . , Hk−1, Hk = G of P such that Hi−1 and Hi are incident for i = 1, . . . , k.
+def ChainConnected (P : Type*) [PartialOrder P] [BoundedOrder P] (h : pureFlag P) :=
+    (inducedGrading h).grade ⊤ ≤ 1 ∨
+    ∀ {f g : P}, ∃ s : Set P, s.Finite ∧ (∀ t ∈ s, IsProper t) ∧ IsChain (· ⋖ ·) s ∧ f ∈ s ∧ g ∈ s
+
+-- all right so i use subtype here maybe i shouldnt?
+def SectionChainConnected (P : Type*) [PartialOrder P] [BoundedOrder P] (h : pureFlag P) :=
+  ∀ {a b : P}, [Fact (a ≤ b)] → ChainConnected (Icc a b) (sectionPure h)
 
 /- An abstract polytope a partial order that is bounded, graded, section-connected, and satisfies
 the diamond property, that is, if the grades of two elements a < b differ by 2, then there are
 exactly 2 elements that lie strictly between a and b. -/
 class AbstractPolytope (P : Type*) extends PartialOrder P, BoundedOrder P where
   pure : pureFlag P
-  connected : SectionChainConnected P
+  connected : SectionChainConnected P pure
   diamond : ∀ {a b : P}, a ≤ b →
       (inducedGrading pure).grade a + (2 : ℤ) = (inducedGrading pure).grade b →
       {x | a < x ∧ x < b}.ncard = 2
-
 
 -- instance : AbstractPolytope Pᵒᵖ := sorry
 
