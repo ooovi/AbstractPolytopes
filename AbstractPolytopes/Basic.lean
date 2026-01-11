@@ -87,30 +87,16 @@ lemma flagOn_encardtoNat_eq_of_pureFlag (h : pureFlag P) (f g : FlagOn (Iic a)) 
 lemma rankex {a : P} (h : pureFlag P) : ∃ n, ∀ f : FlagOn (Iic a), f.carrier.encard = n :=
   (n_exists _ _).mp (flagOn_encard_eq_of_pureFlag h)
 
-end pureFlag
-
-
-
-section SectionChainConnected
-
-variable {P : Type*} [Preorder P] {a b : P} {s t : Set P}
-
-def SectionChainConnected (P : Type*) [Preorder P] :=
-  ∀ {a b : P}, a ≤ b → ∃ s : Set P, IsChain (· ≤ ·) s ∧ s ⊆ Icc a b ∧ a ∈ s ∧ b ∈ s
-
-def flagFromSCC {a b : P} (h : SectionChainConnected P) (hab : a ≤ b) : FlagOn (Icc a b) :=
-  restrictFlag (IsChain.exists_subset_flag (h hab).choose_spec.1.restrict).choose
-
-/-- Extend a given flag on `Iic a` to a flag on `Iic b` thatn contains it. -/
-def extendFlag {a b : P} (hab : a ≤ b) (f : FlagOn (Iic a)) (hc : SectionChainConnected P) :
+/-- Extend a given flag on `Iic a` to a flag on `Iic b` that contains it. -/
+def extendFlag {a b : P} (hab : a ≤ b) (f : FlagOn (Iic a)) :
       FlagOn (Iic b) where
-    carrier := f.carrier ∪ (flagFromSCC hc hab).carrier
+    carrier := f.carrier ∪ (default : FlagOn (Icc a b)).carrier
     carrier_sub := by
       rintro x (hf | hg)
       · exact le_trans (f.carrier_sub hf) hab
-      · exact ((flagFromSCC hc hab).carrier_sub hg).2
+      · exact ((default : FlagOn (Icc a b)).carrier_sub hg).2
     Chain' := by
-      set f' := flagFromSCC hc hab
+      set f' : FlagOn (Icc a b) := default
       rintro x (hxf | hxg) y (hyf | hyg) hne
       · exact f.Chain' hxf hyf hne
       · left; exact le_trans (f.carrier_sub hxf) (f'.carrier_sub hyg).1
@@ -127,49 +113,48 @@ def extendFlag {a b : P} (hab : a ≤ b) (f : FlagOn (Iic a)) (hc : SectionChain
             (fun _ hx _ hy => hchain hx.1 hy.1)
             (fun _ hw => ⟨hcarrier_sub (Or.inl hw), f.carrier_sub hw⟩)).symm ▸ ⟨hz, hza⟩
         · right
-          set f' := (flagFromSCC hc hab)
+          set f' : FlagOn (Icc a b) := default
           exact (f'.max_chain' (Set.inter_subset_right)
             (fun _ hx _ hy => hchain hx.1 hy.1)
             (fun _ hw => ⟨hcarrier_sub (Or.inr hw), f'.carrier_sub hw⟩)).symm ▸
             ⟨hz, haz, hs hz⟩
 
 -- extendFlag in fact extends the flag
-lemma extendFlag_carrier_lt {a b : P} (hab : a < b) (f : FlagOn (Iic a))
-    (hc : SectionChainConnected P) :
-  f.carrier ⊂ (extendFlag hab.le f hc).carrier := by
+lemma extendFlag_carrier_lt {a b : P} (hab : a < b) (f : FlagOn (Iic a)) :
+  f.carrier ⊂ (extendFlag hab.le f).carrier := by
   simp only [extendFlag, ssubset_union_left_iff]
   exact fun c => hab.not_ge <| f.carrier_sub <| c (Icc_bounds_mem hab.le _).2
 
-end SectionChainConnected
-
-variable {P : Type*} [Preorder P] {a b : P} {s t : Set P} in
 -- the order is mono
 -- this is an iff actually
-lemma flagOn_card_mono {a b : P} (h : pureFlag P) (hc : SectionChainConnected P) (alb : a < b)
+lemma flagOn_card_mono {a b : P} (h : pureFlag P) (alb : a < b)
     (f : FlagOn (Iic a)) (g : FlagOn (Iic b)) :
     f.carrier.encard.toNat < g.carrier.encard.toNat := by
-  let f' := extendFlag alb.le f hc
+  let f' := extendFlag alb.le f
   have : f.carrier.encard.toNat < f'.carrier.encard.toNat := by
     rw [← ENat.coe_lt_coe, card_eq_of_pureFlagd h f', card_eq_of_pureFlagd h f]
-    exact Set.Finite.encard_lt_encard (finiteOn_of_pureFlag h f) <| extendFlag_carrier_lt alb f hc
+    exact Set.Finite.encard_lt_encard (finiteOn_of_pureFlag h f) <| extendFlag_carrier_lt alb f
   rwa [flagOn_encard_eq_of_pureFlag h f' g] at this
 
+end pureFlag
+
+
 -- main result: there is a rank implied by pureFlag and SectionChainConnected
-noncomputable instance inducedGrading [PartialOrder P] [BoundedOrder P] (h : pureFlag P)
-    (hc : SectionChainConnected P) :
+noncomputable instance inducedGrading {P : Type*}  [PartialOrder P] [BoundedOrder P]
+    (h : pureFlag P) :
     GradeOrder ℤ P := {
   grade a := ((someFlagOn a).carrier.encard.toNat : ℤ) - 1
   grade_strictMono a b alb := by
-    simpa using flagOn_card_mono h hc alb (someFlagOn a) (someFlagOn b)
+    simpa using flagOn_card_mono h alb (someFlagOn a) (someFlagOn b)
   covBy_grade a b alb := by
       set f := someFlagOn a
-      set g := extendFlag alb.le f hc
-      have card_lt := flagOn_card_mono h hc alb.1 f g
+      set g := extendFlag alb.le f
+      have card_lt := flagOn_card_mono h alb.1 f g
 
       simp only [CovBy, sub_lt_sub_iff_right, Nat.cast_lt, not_lt, tsub_le_iff_right] at alb ⊢
       rw [flagOn_encardtoNat_eq_of_pureFlag h _ g]
-      refine ⟨flagOn_card_mono h hc alb.1 f g, fun m hm => ?_⟩
-      have sub : f.carrier ⊂ g.carrier := extendFlag_carrier_lt alb.1 f hc
+      refine ⟨flagOn_card_mono h alb.1 f g, fun m hm => ?_⟩
+      have sub : f.carrier ⊂ g.carrier := extendFlag_carrier_lt alb.1 f
       have : g.carrier.encard.toNat = f.carrier.encard.toNat + 1 := by
         by_contra hhc
 
@@ -196,6 +181,10 @@ noncomputable instance inducedGrading [PartialOrder P] [BoundedOrder P] (h : pur
 }
 
 
+
+def SectionChainConnected (P : Type*) [Preorder P] : Prop := sorry
+
+
 /- An abstract polytope a partial order that is bounded, graded, section-connected, and satisfies
 the diamond property, that is, if the grades of two elements a < b differ by 2, then there are
 exactly 2 elements that lie strictly between a and b. -/
@@ -203,7 +192,7 @@ class AbstractPolytope (P : Type*) extends PartialOrder P, BoundedOrder P where
   pure : pureFlag P
   connected : SectionChainConnected P
   diamond : ∀ {a b : P}, a ≤ b →
-      (inducedGrading pure connected).grade a + (2 : ℤ) = (inducedGrading pure connected).grade b →
+      (inducedGrading pure).grade a + (2 : ℤ) = (inducedGrading pure).grade b →
       {x | a < x ∧ x < b}.ncard = 2
 
 

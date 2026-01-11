@@ -101,6 +101,7 @@ instance {s : Set P} : Inhabited (FlagOn s) :=
 
 -- TODO what why
 noncomputable def someFlagOn (a : P) : FlagOn (Iic a) := default
+noncomputable def someFlagOnIcc {a b : P} : FlagOn (Icc a b) := default
 
 lemma Iic_bound_mem {a : P} (f : FlagOn (Iic a)) : a ∈ f.carrier := by
   rw [f.max_chain' (insert_subset (mem_Iic.2 le_rfl) f.carrier_sub)
