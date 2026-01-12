@@ -10,6 +10,7 @@ open Set
 -- - it is so incredibly annoying to work with encard is there relief?
 -- - defining the rank by using whatever some flag feels odd. is it ok?
 -- - it is the correct thing to do to define induced rank and use that to define abstract p., yeah?
+-- - so when should i use subtypes and when should i use sets idk
 
 section pureFlag
 
@@ -29,6 +30,10 @@ lemma finiteOn_of_pureFlag (f : FlagOn s) : f.carrier.Finite := by
 
 lemma pureFlag_ne_top (f : FlagOn s) : f.carrier.encard ≠ ⊤ :=
   (finiteOn_of_pureFlag f).encard_lt_top.ne
+
+lemma flag_encardtoNat_eq_of_pureFlag (f g : Flag P) :
+    f.carrier.encard.toNat = g.carrier.encard.toNat := by
+  repeat rw [h.pure]
 
 -- TODO this is the most annoyin thing ever what
 lemma card_eq_of_pureFlagd (f : FlagOn s) :
@@ -86,8 +91,8 @@ lemma flagOn_encardtoNat_eq_of_pureFlag (f g : FlagOn (Iic a)) :
     f.carrier.encard.toNat = g.carrier.encard.toNat :=
   congrArg ENat.toNat (flagOn_encard_eq_of_pureFlag f g)
 
-lemma rankex {a : P} : ∃ n, ∀ f : FlagOn (Iic a), f.carrier.encard = n :=
-  (n_exists _ _).mp (flagOn_encard_eq_of_pureFlag)
+lemma rankex (a : P) : ∃ n, ∀ f : FlagOn (Iic a), f.carrier.encard = n :=
+  (n_exists _ _).mp flagOn_encard_eq_of_pureFlag
 
 -- the order is mono
 -- this is an iff actually
@@ -146,6 +151,20 @@ noncomputable instance inducedGrading {P : Type*} [PartialOrder P] [BoundedOrder
         exact alb.2 alt ltb
       simp [this, Int.le_of_sub_one_lt hm]
 }
+
+example {P : Type*} [PartialOrder P] [BoundedOrder P] (x : ↑(Iic (⊤ : P))) : P := x
+
+-- for sanity
+lemma top_grade_eq_n_mius_one {P : Type*} [PartialOrder P] [BoundedOrder P] [h : PureFlag P] :
+    inducedGrading.grade (⊤ : P) = h.n - 1 := by
+  simp [GradeOrder.grade, ← liftcard]
+  rw [← (ENat.toNat_coe (PureFlag.n P))]
+  rw [← h.pure ((liftFlag (someFlagOn (⊤ : P))).map OrderIso.IicTop), Flag.map_carrier_encard]
+
+lemma bot_grade_eq_minus_one {P : Type*} [PartialOrder P] [BoundedOrder P] [h : PureFlag P] :
+    inducedGrading.grade (⊥ : P) = -1 := by
+  simp [GradeOrder.grade, ← liftcard]
+  sorry -- snap Iic ⊥ is not empty
 
 def IsProper [LE α] [BoundedOrder α] (s : α) : Prop := ⊤ ≠ s ∧ ⊥ ≠ s
 

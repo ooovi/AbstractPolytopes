@@ -49,4 +49,14 @@ lemma Pairwise.subset {α : Type*} {r : α → α → Prop} {s t : Set α}
     (h : s.Pairwise r) (hst : t ⊆ s) : t.Pairwise r :=
   fun _ hx _ hy hne => h (hst hx) (hst hy) hne
 
+theorem Subtype.val_preimage_card (s t : Set α) (h : s ⊆ t) :
+    (Subtype.val ⁻¹' s : Set t).encard = s.encard := by
+  apply Set.encard_preimage_of_injective_subset_range
+  exact Subtype.val_injective
+  simp [h]
+
+theorem Flag.map_carrier_encard {α : Type*} {β : Type*} [Preorder α] [Preorder β] (e : α ≃o β) (f : Flag α) :
+    (f.map e).carrier.encard = f.carrier.encard := by
+  simpa [Flag.map, Equiv.coe_fn_mk] using ENat.card_image_of_injective _ _ e.injective
+
 end mathlib?

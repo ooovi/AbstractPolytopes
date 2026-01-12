@@ -48,6 +48,11 @@ def liftFlag (f : FlagOn s) : Flag s :={
     · exact fun a ah => ⟨⟨a, f.carrier_sub ah⟩, chsub ah, rfl⟩
 }
 
+@[simp]
+lemma liftcard (f : FlagOn s) : (liftFlag f).carrier.encard = f.carrier.encard := by
+  simp [liftFlag]
+  exact Subtype.val_preimage_card f.carrier _ f.carrier_sub
+
 def restrictFlag (f : Flag s) : FlagOn s :={
   carrier := f.carrier
   carrier_sub := Subtype.coe_image_subset s f.carrier
