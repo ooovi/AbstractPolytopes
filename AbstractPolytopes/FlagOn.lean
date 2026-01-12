@@ -96,7 +96,6 @@ noncomputable def expandIcc (α : Type*) [Preorder α] (a : α) (f : FlagOn (Iic
     · exact ff
     · exact le_trans ff (z.Chain' c this |> fun h => by simp [d] at h; exact h hne)
 
-
 section Preorder
 
 variable {P : Type*} [Preorder P]

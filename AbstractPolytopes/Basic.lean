@@ -1,4 +1,6 @@
 import Mathlib.Order.Grade
+import Mathlib.Order.SuccPred.Basic
+import Mathlib.Combinatorics.SimpleGraph.Hasse
 
 import AbstractPolytopes.FlagOn
 
@@ -111,60 +113,110 @@ instance sectionPure : PureFlag ↑(Icc a b) := sorry
 
 end pureFlag
 
+-- -- main result: there is a rank implied by pureFlag and SectionChainConnected
+-- noncomputable instance inducedGrading {P : Type*} [PartialOrder P] [BoundedOrder P]
+--     [h : PureFlag P] :
+--     GradeOrder ℤ P := {
+--   grade a := ((someFlagOn a).carrier.encard.toNat : ℤ) - 1
+--   grade_strictMono a b alb := by
+--     simpa using flagOn_card_mono alb (someFlagOn a) (someFlagOn b)
+--   covBy_grade a b alb := by
+--       set f := someFlagOn a
+--       set g := extendFlag alb.le f
+--       have card_lt := flagOn_card_mono alb.1 f g
+
+--       simp only [CovBy, sub_lt_sub_iff_right, Nat.cast_lt, not_lt, tsub_le_iff_right] at alb ⊢
+--       rw [flagOn_encardtoNat_eq_of_pureFlag _ g]
+--       refine ⟨flagOn_card_mono alb.1 f g, fun m hm => ?_⟩
+--       have sub : f.carrier ⊂ g.carrier := extendFlag_carrier_lt alb.1 f
+--       have : g.carrier.encard.toNat = f.carrier.encard.toNat + 1 := by
+--         by_contra hhc
+
+--         have : f.carrier.encard.toNat + 2 ≤ g.carrier.encard.toNat := by omega
+--         obtain ⟨c, h, hh, hhh⟩ :=
+--           strict_intermediate this sub ⟨pureFlag_ne_top f, pureFlag_ne_top g⟩
+
+--         have cnmem : c ∉ Iic a := fun cmem => Set.ne_insert_of_notMem _ h <|
+--           f.max_chain' (insert_subset cmem f.carrier_sub)
+--             (Set.pairwise_insert.mpr ⟨f.Chain', fun b bm bnc => by convert g.Chain' hh (sub.le bm) bnc; simpa using Or.symm⟩)
+--             (subset_insert c f.carrier)
+--         have anc := (ne_of_mem_of_not_mem (f.carrier_sub (Iic_bound_mem f)) cnmem)
+
+--         have alt : a < c := by cases g.Chain' (sub.le (Iic_bound_mem f)) hh anc with
+--         | inl h => exact lt_of_le_not_ge h cnmem
+--         | inr h => exact absurd cnmem (by simpa)
+
+--         have ltb : c < b := by cases g.Chain' (Iic_bound_mem g) hh hhh.symm with
+--         | inl h => exact absurd (g.carrier_sub hh) (fun hc => hhh (le_antisymm hc h))
+--         | inr h => exact lt_of_le_of_ne (by simp at h; convert h) hhh
+
+--         exact alb.2 alt ltb
+--       simp [this, Int.le_of_sub_one_lt hm]
+-- }
+
+
 -- main result: there is a rank implied by pureFlag and SectionChainConnected
 noncomputable instance inducedGrading {P : Type*} [PartialOrder P] [BoundedOrder P]
     [h : PureFlag P] :
-    GradeOrder ℤ P := {
-  grade a := ((someFlagOn a).carrier.encard.toNat : ℤ) - 1
+    GradeOrder ℕ P := {
+  grade a := (someFlagOn a).carrier.encard.toNat
   grade_strictMono a b alb := by
     simpa using flagOn_card_mono alb (someFlagOn a) (someFlagOn b)
   covBy_grade a b alb := by
       set f := someFlagOn a
       set g := extendFlag alb.le f
+      simp [flagOn_encardtoNat_eq_of_pureFlag _ g, ← Order.succ_eq_iff_covBy]
+
+      by_contra hhc
+
       have card_lt := flagOn_card_mono alb.1 f g
-
-      simp only [CovBy, sub_lt_sub_iff_right, Nat.cast_lt, not_lt, tsub_le_iff_right] at alb ⊢
-      rw [flagOn_encardtoNat_eq_of_pureFlag _ g]
-      refine ⟨flagOn_card_mono alb.1 f g, fun m hm => ?_⟩
       have sub : f.carrier ⊂ g.carrier := extendFlag_carrier_lt alb.1 f
-      have : g.carrier.encard.toNat = f.carrier.encard.toNat + 1 := by
-        by_contra hhc
+      have : f.carrier.encard.toNat + 2 ≤ g.carrier.encard.toNat := by omega
 
-        have : f.carrier.encard.toNat + 2 ≤ g.carrier.encard.toNat := by omega
-        obtain ⟨c, h, hh, hhh⟩ :=
-          strict_intermediate this sub ⟨pureFlag_ne_top f, pureFlag_ne_top g⟩
+      obtain ⟨c, h, hh, hhh⟩ :=
+        strict_intermediate this sub ⟨pureFlag_ne_top f, pureFlag_ne_top g⟩
 
-        have cnmem : c ∉ Iic a := fun cmem => Set.ne_insert_of_notMem _ h <|
-          f.max_chain' (insert_subset cmem f.carrier_sub)
-            (Set.pairwise_insert.mpr ⟨f.Chain', fun b bm bnc => by convert g.Chain' hh (sub.le bm) bnc; simpa using Or.symm⟩)
-            (subset_insert c f.carrier)
-        have anc := (ne_of_mem_of_not_mem (f.carrier_sub (Iic_bound_mem f)) cnmem)
+      have cnmem : c ∉ Iic a := fun cmem => Set.ne_insert_of_notMem _ h <|
+        f.max_chain' (insert_subset cmem f.carrier_sub)
+          (Set.pairwise_insert.mpr ⟨f.Chain', fun b bm bnc => by convert g.Chain' hh (sub.le bm) bnc; simpa using Or.symm⟩)
+          (subset_insert c f.carrier)
 
-        have alt : a < c := by cases g.Chain' (sub.le (Iic_bound_mem f)) hh anc with
-        | inl h => exact lt_of_le_not_ge h cnmem
-        | inr h => exact absurd cnmem (by simpa)
+      have anc := (ne_of_mem_of_not_mem (f.carrier_sub (Iic_bound_mem f)) cnmem)
+      have alt : a < c := by cases g.Chain' (sub.le (Iic_bound_mem f)) hh anc with
+      | inl h => exact lt_of_le_not_ge h cnmem
+      | inr h => exact absurd cnmem (by simpa)
 
-        have ltb : c < b := by cases g.Chain' (Iic_bound_mem g) hh hhh.symm with
-        | inl h => exact absurd (g.carrier_sub hh) (fun hc => hhh (le_antisymm hc h))
-        | inr h => exact lt_of_le_of_ne (by simp at h; convert h) hhh
+      have ltb : c < b := by cases g.Chain' (Iic_bound_mem g) hh hhh.symm with
+      | inl h => exact absurd (g.carrier_sub hh) (fun hc => hhh (le_antisymm hc h))
+      | inr h => exact lt_of_le_of_ne (by simp at h; convert h) hhh
 
-        exact alb.2 alt ltb
-      simp [this, Int.le_of_sub_one_lt hm]
+      exact alb.2 alt ltb
 }
 
 example {P : Type*} [PartialOrder P] [BoundedOrder P] (x : ↑(Iic (⊤ : P))) : P := x
 
 -- for sanity
-lemma top_grade_eq_n_mius_one {P : Type*} [PartialOrder P] [BoundedOrder P] [h : PureFlag P] :
-    inducedGrading.grade (⊤ : P) = h.n - 1 := by
+lemma top_grade_eq_n {P : Type*} [PartialOrder P] [BoundedOrder P] [h : PureFlag P] :
+    inducedGrading.grade (⊤ : P) = h.n := by
   simp [GradeOrder.grade, ← liftcard]
   rw [← (ENat.toNat_coe (PureFlag.n P))]
   rw [← h.pure ((liftFlag (someFlagOn (⊤ : P))).map OrderIso.IicTop), Flag.map_carrier_encard]
 
-lemma bot_grade_eq_minus_one {P : Type*} [PartialOrder P] [BoundedOrder P] [h : PureFlag P] :
-    inducedGrading.grade (⊥ : P) = -1 := by
-  simp [GradeOrder.grade, ← liftcard]
-  sorry -- snap Iic ⊥ is not empty
+lemma bot_grade_eq_one {P : Type*} [PartialOrder P] [BoundedOrder P] [h : PureFlag P] :
+    inducedGrading.grade (⊥ : P) = 1 := by
+  simp [GradeOrder.grade, ← liftcard, liftFlag]
+  rw [Subtype.val_preimage_card _ _ (someFlagOn ⊥).carrier_sub]
+  set dd : FlagOn (Iic (⊥ : P)) := {
+    carrier := {⊥}
+    carrier_sub a b := by simp_all
+    Chain' := by exact IsChain.singleton
+    max_chain' a b c d := by
+      ext; constructor <;> intros <;> simp_all
+  }
+  have := flagOn_encardtoNat_eq_of_pureFlag dd (someFlagOn ⊥)
+  simp only [(by unfold dd; simp : dd.carrier.encard = 1)] at this
+  convert this.symm
+  simp [ENat.toNat_eq_iff_eq_coe, Nat.cast_one]
 
 def IsProper [LE α] [BoundedOrder α] (s : α) : Prop := ⊤ ≠ s ∧ ⊥ ≠ s
 
@@ -173,7 +225,7 @@ def IsProper [LE α] [BoundedOrder α] (s : α) : Prop := ⊤ ≠ s ∧ ⊥ ≠ 
 -- F = H0, H1, . . . , Hk−1, Hk = G of P such that Hi−1 and Hi are incident for i = 1, . . . , k.
 def ChainConnected (P : Type*) [PartialOrder P] [BoundedOrder P] [PureFlag P] :=
     inducedGrading.grade (⊤ : P) ≤ 1 ∨
-    ∀ {f g : P}, ∃ s : Set P, s.Finite ∧ (∀ t ∈ s, IsProper t) ∧ IsChain (· ⋖ ·) s ∧ f ∈ s ∧ g ∈ s
+    ∀ {f g : {p | IsProper p}}, ((SimpleGraph.hasse P).induce {p | IsProper p}).Reachable f g
 
 -- all right so i use subtype here maybe i shouldnt?
 def SectionChainConnected (P : Type*) [PartialOrder P] [BoundedOrder P] [PureFlag P] :=
