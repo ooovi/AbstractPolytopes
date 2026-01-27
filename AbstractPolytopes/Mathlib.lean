@@ -55,8 +55,33 @@ theorem Subtype.val_preimage_card (s t : Set α) (h : s ⊆ t) :
   exact Subtype.val_injective
   simp [h]
 
+theorem Subtype.val_image_card (t : Set α) (s : Set t) :
+    (Subtype.val '' s).encard = s.encard :=
+  Function.Injective.encard_image Subtype.val_injective _
+
 theorem Flag.map_carrier_encard {α : Type*} {β : Type*} [Preorder α] [Preorder β] (e : α ≃o β) (f : Flag α) :
     (f.map e).carrier.encard = f.carrier.encard := by
   simpa [Flag.map, Equiv.coe_fn_mk] using ENat.card_image_of_injective _ _ e.injective
+
+theorem IsChain.to_dual [LE α] (hs : @IsChain α (· ≤ ·) s) : @IsChain αᵒᵈ (· ≤ ·) s := by
+  intro x hx y hy hne
+  obtain h | h := hs hx hy hne
+  · right; exact h
+  · left; exact h
+
+theorem IsChain.to_dual_iff [LE α] : @IsChain α (· ≤ ·) s ↔ @IsChain αᵒᵈ (· ≤ ·) s :=
+  ⟨to_dual, to_dual⟩
+
+theorem bijOn_encard_eq {α β : Type*} {f : α → β} {s : Set α} {t : Set β} (hf : Set.BijOn f s t) :
+    s.encard.toNat = t.encard.toNat := by
+  rw [Set.BijOn] at hf
+  obtain ⟨hmaps, hinj, hsurj⟩ := hf
+  have : s.encard = t.encard := by
+    have := ENat.card_image_of_injOn hinj
+    simp at this
+    rw [← this]
+    congr
+    exact SurjOn.image_eq_of_mapsTo hsurj hmaps
+  rw [this]
 
 end mathlib?
