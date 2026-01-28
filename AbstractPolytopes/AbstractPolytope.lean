@@ -11,20 +11,25 @@ import Mathlib.Data.Finset.Sort
 
 open Set
 
-section useful_stuff
+
+
+
+section Definitions
+
+/-- An abstract pre-polytope is a bounded graded poset that satisfies the diamond property. -/
+def IsAbstractPrePolytope (P : Type*) [PartialOrder P] [BoundedOrder P] [g : GradeOrder ℕ P] :=
+  ∀ (x y : P), g.grade y = g.grade x + 2 → (Ioo x y).encard = 2
+
+
+section ChainConnectedPrereqs
 
 variable {α : Type*} [Preorder α]
 
-instance IccBounded {a b : α} [h : Fact (a ≤ b)] :
-    BoundedOrder (Set.Icc a b) where
-  top := ⟨b, right_mem_Icc.mpr h.elim⟩
-  le_top x := (mem_Icc.mp x.prop).2
-  bot := ⟨a, left_mem_Icc.mpr h.elim⟩
-  bot_le x := (mem_Icc.mp x.prop).1
-
+/-- The order embedding from a subtype of α into α. -/
 def subO (p : α → Prop) : Subtype p ↪o α :=
   ⟨⟨Subtype.val, Subtype.coe_injective⟩, by simp⟩
 
+-- a graded order on α induces a graded order on the closed interval [a, b]
 instance IccGrade [go : GradeOrder ℕ α] {a b : α} :
     GradeOrder ℕ (Set.Icc a b) where
   grade x := grade ℕ x.val
@@ -33,22 +38,10 @@ instance IccGrade [go : GradeOrder ℕ α] {a b : α} :
     have := c.image (subO _) (by simpa [subO] using Set.ordConnected_Icc)
     convert go.covBy_grade this
 
-def IooSubtypeEquiv {a b : α} (x y : ↑(Icc a b)) : Ioo x y ≃ Ioo x.val y.val := by
-  refine ⟨fun z => ⟨z.val.val, z.prop⟩, fun z => ⟨⟨z.val, ?_⟩, z.prop⟩, fun z => rfl, fun z => rfl⟩
-  refine mem_Icc.mp ⟨?_, ?_⟩
-  exact (lt_of_le_of_lt (mem_Icc.mp x.prop).1 (mem_Ioo.mp z.prop).1).le
-  exact (lt_of_lt_of_le (mem_Ioo.mp z.prop).2 (mem_Icc.mp y.prop).2).le
-
+/-- An element of a bounded order is called proper if it is neither the top nor the bottom element. -/
 def IsProper [BoundedOrder α] (s : α) : Prop := s ≠ ⊤ ∧ s ≠ ⊤
 
-end useful_stuff
-
-
-section Definitions
-
-/-- An abstract pre-polytope is a bounded graded poset that satisfies the diamond property. -/
-def IsAbstractPrePolytope (P : Type*) [PartialOrder P] [BoundedOrder P] [g : GradeOrder ℕ P] :=
-  ∀ (x y : P), g.grade y = g.grade x + 2 → (Ioo x y).encard = 2
+end ChainConnectedPrereqs
 
 variable (P : Type*) [PartialOrder P] [BoundedOrder P] [g : GradeOrder ℕ P]
 
@@ -97,6 +90,14 @@ theorem IsAbstractPrePolytope.flagCardEq (ap : IsAbstractPrePolytope P) (f f' : 
 -- so its the last thing in that sorted flag, so grade ⊤ + 1 is the length of the flag
 
 -- here's some stuff that could be useful:
+
+-- the open interval (x, y) : Set [a, b] is equivalent to the open interval (x, y) : Set P
+-- this is a bit odd and probably not what i should do
+def IooSubtypeEquiv{α : Type*} [Preorder α] {a b : α} (x y : ↑(Icc a b)) : Ioo x y ≃ Ioo x.val y.val := by
+  refine ⟨fun z => ⟨z.val.val, z.prop⟩, fun z => ⟨⟨z.val, ?_⟩, z.prop⟩, fun z => rfl, fun z => rfl⟩
+  refine mem_Icc.mp ⟨?_, ?_⟩
+  exact (lt_of_le_of_lt (mem_Icc.mp x.prop).1 (mem_Ioo.mp z.prop).1).le
+  exact (lt_of_lt_of_le (mem_Ioo.mp z.prop).2 (mem_Icc.mp y.prop).2).le
 
 /-- The induced order on every closed interval of an abstract pre-polytope is itself an abstract
 pre-polytope. -/
@@ -168,6 +169,14 @@ lemma unique_grade_in_chain (s : Set P) (f : IsChain (· ≤ ·) s) (hx : x ∈ 
 omit [BoundedOrder P] in
 lemma cov_grade_succ (h : x ⋖ y) : g.grade x + 1 = g.grade y :=
   Order.covBy_iff_add_one_eq.mp <| g.covBy_grade h
+
+-- any preorder on the nonempty closed interval is bounded
+instance IccBounded {α : Type*} [Preorder α] {a b : α} [h : Fact (a ≤ b)] :
+    BoundedOrder (Set.Icc a b) where
+  top := ⟨b, right_mem_Icc.mpr h.elim⟩
+  le_top x := (mem_Icc.mp x.prop).2
+  bot := ⟨a, left_mem_Icc.mpr h.elim⟩
+  bot_le x := (mem_Icc.mp x.prop).1
 
 end FlagPurity
 
