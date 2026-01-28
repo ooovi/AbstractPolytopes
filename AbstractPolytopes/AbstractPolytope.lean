@@ -60,40 +60,13 @@ strongly connected. -/
 def IsAbstractPolytope (P : Type*) [PartialOrder P] [BoundedOrder P] [g : GradeOrder ℕ P] :=
   IsAbstractPrePolytope P ∧ SectionChainConnected P
 
-end Definitions
 
 
-section FlagPurity
-
-variable {P : Type*} [PartialOrder P] [BoundedOrder P] [g : GradeOrder ℕ P]
-
--- GOAL: in an abstract pre-polytope, all flags have the same size.
--- alternatively, we can prove that every flag has size g.grade ⊤ + 1
--- this is called Jordan-Dedekind chain condition sometimes
-theorem IsAbstractPrePolytope.flagCardEq (ap : IsAbstractPrePolytope P) (f f' : Flag P) :
-    f.carrier.encard.toNat = f'.carrier.encard.toNat := sorry
-
--- probably makes sense to check out what's in
--- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Order/Grade.html
-
--- proof idea 1: induction on the size of the lattice g.grade ⊤. a flag F in P must contain an
--- element c that covers ⊤ (this is called Coatomic in mathlib and i think its not proven there for
--- flags). if we remove ⊤ from F we get a flag F' in the interval [⊥, c], which is also an abstract
--- pre-polytope (see IsAbstractPrePolytope.Icc). by inductive hypothesis, F' has length g.grade c
--- which is g.grade ⊤ - 1
--- note that this is tricky, because if we view the interval [⊥, c] as a type, we need to prove
--- that it is actually "smaller" than P so the induction terminates...not sure how to do that kinda
--- thing
-
--- proof idea 2: prove that every flag can be sorted s.t. each element covers the next.
--- we have cov_grade_succ (h : x ⋖ y) : g.grade x + 1 = g.grade y. ⊤ is contained in every flag,
--- so its the last thing in that sorted flag, so grade ⊤ + 1 is the length of the flag
-
--- here's some stuff that could be useful:
 
 -- the open interval (x, y) : Set [a, b] is equivalent to the open interval (x, y) : Set P
 -- this is a bit odd and probably not what i should do
-def IooSubtypeEquiv{α : Type*} [Preorder α] {a b : α} (x y : ↑(Icc a b)) : Ioo x y ≃ Ioo x.val y.val := by
+def IooSubtypeEquiv {α : Type*} [Preorder α] {a b : α} (x y : ↑(Icc a b)) :
+    Ioo x y ≃ Ioo x.val y.val := by
   refine ⟨fun z => ⟨z.val.val, z.prop⟩, fun z => ⟨⟨z.val, ?_⟩, z.prop⟩, fun z => rfl, fun z => rfl⟩
   refine mem_Icc.mp ⟨?_, ?_⟩
   exact (lt_of_le_of_lt (mem_Icc.mp x.prop).1 (mem_Ioo.mp z.prop).1).le
@@ -111,6 +84,36 @@ theorem IsAbstractPrePolytope.Icc (ap : IsAbstractPrePolytope P) {a b : P}
 
 -- another nice goal
 -- instance {a b : P}  [Fact (a ≤ b)] : IsAbstractPolytope (Icc a b) := sorry
+
+end Definitions
+
+
+section FlagPurity
+
+variable {P : Type*} [PartialOrder P] [BoundedOrder P] [g : GradeOrder ℕ P]
+
+-- GOAL: in a graded bounded order, all flags have the same size.
+-- alternatively, we can prove that every flag has size g.grade ⊤ + 1
+-- this is called Jordan-Dedekind chain condition sometimes
+theorem flagCardEq (f f' : Flag P) : f.carrier.encard.toNat = f'.carrier.encard.toNat := sorry
+
+-- probably makes sense to check out what's in
+-- https://leanprover-community.github.io/mathlib4_docs/Mathlib/Order/Grade.html
+
+-- proof idea 1: induction on the size of the lattice g.grade ⊤. a flag F in P must contain an
+-- element c that covers ⊤ (this is called Coatomic in mathlib and i think its not proven there for
+-- flags). if we remove ⊤ from F we get a flag F' in the interval [⊥, c], which is also a graded
+-- bounded poset with induced grading (see IccGrade). by inductive hypothesis, F' has length
+-- g.grade c which is g.grade ⊤ - 1
+-- note that this is tricky, because if we view the interval [⊥, c] as a type, we need to prove
+-- that it is actually "smaller" than P so the induction terminates...not sure how to do that kinda
+-- thing
+
+-- proof idea 2: prove that every flag can be sorted s.t. each element covers the next.
+-- we have cov_grade_succ (h : x ⋖ y) : g.grade x + 1 = g.grade y. ⊤ is contained in every flag,
+-- so its the last thing in that sorted flag, so grade ⊤ + 1 is the length of the flag
+
+-- here's some stuff that could be useful:
 
 omit [BoundedOrder P] in
 theorem grade_injective_le {a b : P} (hab : a ≤ b) (h_grade : g.grade a = g.grade b) :
@@ -183,7 +186,7 @@ end FlagPurity
 
 -- i played with the induction idea a bit but some of those sorries are juicy
 theorem flagPure_of_apo (P : Type*) (po : PartialOrder P) (bo : BoundedOrder P) (g : GradeOrder ℕ P)
-   (ap : IsAbstractPrePolytope P) (f : Flag P) :
+    (f : Flag P) :
     f.carrier.encard.toNat = g.grade ⊤ + 1 := by
   cases h : g.grade ⊤ + 1 with
   | zero => simp at h
@@ -192,7 +195,6 @@ theorem flagPure_of_apo (P : Type*) (po : PartialOrder P) (bo : BoundedOrder P) 
       -- this needs proving and is not easy
       obtain ⟨c, coc⟩ : ∃ c, c ∈ f ∧ IsCoatom c := sorry
       have : Fact (⊥ ≤ c) := Fact.mk (OrderBot.bot_le c)
-      have := ap.Icc (a := (⊥ : P)) (b := c)
       -- the flag with ⊤ removed
       let f' : Flag (Icc ⊥ c) := {
         carrier := {x | x.val ∈ f.carrier}
@@ -201,7 +203,7 @@ theorem flagPure_of_apo (P : Type*) (po : PartialOrder P) (bo : BoundedOrder P) 
           sorry -- this should follow directly from f.max_chain'
       }
       -- inductive hypothesis
-      have ih := flagPure_of_apo (Icc ⊥ c) _ IccBounded IccGrade this f'
+      have ih := flagPure_of_apo (Icc ⊥ c) _ IccBounded IccGrade f'
       -- now some annoying stuff needs to happen to talk about sizes of sets under subtype coercion:
       have eep : (IccGrade.grade (⊤ : Icc ⊥ c)) + 1 = g.grade ⊤ := sorry -- this needs the coatom (coc)
       have : f.carrier.encard = f'.carrier.encard + 1 := by simp [f']; sorry
